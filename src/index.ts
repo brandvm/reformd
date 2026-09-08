@@ -1,13 +1,18 @@
-// Entry point. Keep this file a manifest: one import and one call per
-// module, so what runs on the site is readable at a glance. Feature code
-// lives in src/modules/<name>.ts and exports a single init function that
-// no-ops when its selector is absent from the page.
+import { initSmoothScroll } from './modules/smooth-scroll';
+import { initNavShrink } from './modules/nav-shrink';
+import { initWaitlistModal } from './modules/waitlist-modal';
+import { logStatus, onReady, runModule } from './utils';
 
-// import { initExample } from './modules/example';
+logStatus('boot');
 
-// initExample();
-
-// Release the pre-paint scroll lock set by the head bootstrap (loader.html).
-// Must stay last, and must stay unconditional — an early return above it
-// leaves the page permanently locked until the snippet's 3s timeout fires.
-document.documentElement.classList.remove('is-loading');
+onReady(() => {
+  try {
+    runModule('SmoothScroll', initSmoothScroll);
+    runModule('NavShrink', initNavShrink);
+    runModule('WaitlistModal', initWaitlistModal);
+    logStatus('ready');
+  } finally {
+    // Always release the pre-paint lock, even when a feature fails to initialize.
+    document.documentElement.classList.remove('is-loading');
+  }
+});

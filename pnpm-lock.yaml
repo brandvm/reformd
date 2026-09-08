@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      lenis:
+        specifier: 1.1.5
+        version: 1.1.5
     devDependencies:
       esbuild:
         specifier: ^0.28.2
@@ -16,6 +20,10 @@ importers:
         version: 7.0.2
 
 packages:
+
+  '@darkroom.engineering/tempus@0.0.46':
+    resolution: {integrity: sha512-s5vav3KMHYezvUCl4ee5epg0oimF6M8C9gAaKxFnFaTvX2q3ywFDryIv6XLd0mRFUt3S1uHDJqKaiEcs2ZVSvw==}
+    deprecated: 'The ''@darkroom.engineering/tempus'' package has been renamed to ''tempus''. Please update your dependencies: npm install tempus and visit the documentation: https://www.npmjs.com/package/tempus'
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -298,12 +306,25 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  lenis@1.1.5:
+    resolution: {integrity: sha512-RNpGFoOVFGboCdJ7EUcMTUNZC7d/AJV1ad8eBTYBdL2TuwdWJ11Mb5jx4dLreHadH8Mg2o+3uVHQHTd4txasaw==}
+    peerDependencies:
+      react: '>=17.0.0'
+      react-dom: '>=17.0.0'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
   typescript@7.0.2:
     resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
     engines: {node: '>=16.20.0'}
     hasBin: true
 
 snapshots:
+
+  '@darkroom.engineering/tempus@0.0.46': {}
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true
@@ -471,6 +492,10 @@ snapshots:
       '@esbuild/win32-arm64': 0.28.2
       '@esbuild/win32-ia32': 0.28.2
       '@esbuild/win32-x64': 0.28.2
+
+  lenis@1.1.5:
+    dependencies:
+      '@darkroom.engineering/tempus': 0.0.46
 
   typescript@7.0.2:
     optionalDependencies:

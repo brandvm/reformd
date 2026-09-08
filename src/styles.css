@@ -1,86 +1,528 @@
-/* Global site styles — source of truth for custom CSS.
-   Built to dist/styles.css (minified) and released via jsDelivr pinned tags.
-   Keep Designer classes for layout; this file is for tokens, resets,
-   utilities, and JS-paired styles that Webflow classes cannot express.
-
-   CASCADE NOTES — read before adding rules.
-   1. This sheet is injected by an HTML Embed in the body (see loader.html),
-      so it lands after webflow.css. Ties on specificity go to us.
-   2. That only works at EQUAL specificity. `h1 {}` beats Webflow's `h1 {}`,
-      but `:where(h1) {}` (0-0-0) loses to it (0-0-1). Use :where() only for
-      our own base layer that Designer classes should be free to override.
-   3. Never wrap overrides in @layer. Webflow's CSS is unlayered, and
-      unlayered always beats layered regardless of order.
-   4. Section order IS the tiebreaker — most of this file sits at 0-1-0
-      (one class, or one attribute selector), so when two rules collide
-      the later one wins. Sections run broad to narrow:
-
-        01 TOKENS               variables only, no output
-        02 BASE                 our reset and element defaults
-        03 WEBFLOW NEUTRALIZERS undo what Webflow's normalize invents
-        04 DOCUMENT STATE       runtime classes on <html>, set by JS
-        05 COMPONENTS & MOTION  named things: .link-underline, marquees
-        06 UTILITIES            single-purpose, must beat components
-        07 ACCESSIBILITY        focus rings and reduced-motion trumps
-        08 EDITOR & DEV SUPPORTS canvas-only escape hatches
-
-      Add rules to the section they belong to, not to the end of the
-      file — appending is how a utility silently stops winning.
-   ============================================================ */
+/* Reformd custom styles.
+   Sources: existing reformd-main.css, Webflow global head, and waitlist modal.
+   Built to dist/styles.css. Load from the shared canvas Embed after Webflow CSS.
+   Keep overrides unlayered and preserve selector specificity. Add rules to the
+   appropriate numbered section: equal-specificity rules later in the file win.
+*/
 
 /* ============================================================
    01. TOKENS
-   Variables only — no declarations that paint. Mirror the Webflow
-   Variables here rather than re-inventing a parallel palette:
-   override a PRIMITIVE and everything aliased downstream moves with it.
    ============================================================ */
+
+:root {
+  /* Scaling System */
+  --size-unit: 16; /* Body font-size in design units (no px) */
+  --size-container-ideal: 1680;
+  --size-container-min: 1280px;
+  --size-container-max: 1920px;
+
+  --size-container: clamp(
+    var(--size-container-min),
+    100vw,
+    var(--size-container-max)
+  );
+
+  --size-font: calc(
+    var(--size-container) / (var(--size-container-ideal) / var(--size-unit))
+  );
+
+  font-size: var(--size-font);
+
+  /* Color aliases (still uses your existing --_colors---* vars) */
+  --color-accent: var(--_colors---accent, #5498dc);
+  --color-bg-dark: var(--_colors---bg--dark, #0b0e14);
+  --color-text-light: var(--_colors---text-color--light, #f2f5ff);
+
+  /* Existing tokens (kept as-is) */
+  --base---box-opacity: 50%;
+  --shadow-blur: 3em;
+  --address-icon-fill: var(--color-accent);
+
+  /* Motion + timing */
+  --ease-bbs: cubic-bezier(0.65, 0.05, 0, 1);
+  --dur-bbs: 735ms;
+
+  /* Underline effect */
+  --underline-top: 100%;
+  --underline-height: 1px;
+  --inline-underline-opacity: 0.48;
+
+  /* Loops */
+  --loop-x-duration: 60s;
+  --loop-y-duration: 32s;
+
+  /* SVG dash */
+  --svg-dash-duration: 8s;
+  --svg-dash-offset: 600;
+
+  /* Zoom */
+  --image-zoom-scale: 1.12;
+}
+
+/* Tablet */
+@media screen and (max-width: 991px) {
+  :root {
+    --size-container-ideal: 834;
+    --size-container-min: 768px;
+    --size-container-max: 991px;
+  }
+}
+
+/* Mobile Landscape */
+@media screen and (max-width: 767px) {
+  :root {
+    --size-container-ideal: 430;
+    --size-container-min: 480px;
+    --size-container-max: 767px;
+  }
+}
+
+/* Mobile Portrait */
+@media screen and (max-width: 479px) {
+  :root {
+    --size-container-ideal: 430;
+    --size-container-min: 320px;
+    --size-container-max: 428px;
+  }
+}
+
+/* ------------------------------------------------
+            02. Color System: OKLCH and Display-P3 Fallback
+            ------------------------------------------------ */
+@supports (color: oklch(50% 0.2 280)) {
+  :root {
+    /* Add OKLCH tokens here if needed */
+    --_colors---black: oklch(0% 0 0);
+    --_colors---jet-black: oklch(27.44099% 0.01325 253.0412);
+    --_colors---hsa-green: oklch(41.08666% 0.04898 209.281);
+    --_colors---peach: oklch(68.97933% 0.11222 35.797);
+    --_colors---vanilla: oklch(97.76604% 0.01869 96.8597);
+    --_colors---white: oklch(100% 0 89.8756);
+
+    --_colors---gradient--green-stop-1: oklch(75.63116% 0.05108 183.3079);
+    --_colors---gradient--green-stop-2: oklch(55.78373% 0.06895 209.7173);
+    --_colors---gradient--green-stop-3: oklch(42.47057% 0.05105 210.5168);
+    --_colors---gradient--highlight-stop-1: oklch(76.03173% 0.10063 55.06835);
+    --_colors---gradient--highlight-stop-2: oklch(84.73567% 0.10453 78.735);
+    --_colors---gradient--green-stop-1-light: oklch(83.46599% 0.05012 173.6354);
+    --_colors---gradient--green-stop-2-light: oklch(67.39397% 0.08011 210.4337);
+    --_colors---gradient--peach-stop-1: oklch(79.05355% 0.09929 63.5832);
+    --_colors---gradient--peach-stop-2: oklch(84.73567% 0.10453 78.735);
+    --_colors---gradient--peach-stop-3: oklch(84.88607% 0.07339 119.7884);
+  }
+}
+
+@supports (color: color(display-p3 1 0 0)) {
+  :root {
+    /* Add Display-P3 tokens here if needed */
+
+    --_colors---black: color(display-p3 0 0 0);
+    --_colors---jet-black: color(display-p3 0.137255 0.156863 0.180392);
+    --_colors---hsa-green: color(display-p3 0.152941 0.321569 0.34902);
+    --_colors---peach: color(display-p3 0.843137 0.505882 0.415686);
+    --_colors---vanilla: color(display-p3 0.984314 0.972549 0.917647);
+    --_colors---white: color(display-p3 1 1 1);
+
+    --_colors---gradient--green-stop-1: color(
+      display-p3 0.54902 0.733333 0.701961
+    );
+    --_colors---gradient--green-stop-2: color(
+      display-p3 0.239216 0.498039 0.541176
+    );
+    --_colors---gradient--green-stop-3: color(
+      display-p3 0.160784 0.337255 0.368627
+    );
+    --_colors---gradient--highlight-stop-1: color(
+      display-p3 0.890196 0.627451 0.447059
+    );
+    --_colors---gradient--highlight-stop-2: color(
+      display-p3 0.94902 0.772549 0.486275
+    );
+    --_colors---gradient--green-stop-1-light: color(
+      display-p3 0.658824 0.831373 0.776471
+    );
+    --_colors---gradient--green-stop-2-light: color(
+      display-p3 0.333333 0.643137 0.698039
+    );
+    --_colors---gradient--peach-stop-1: color(
+      display-p3 0.909804 0.678431 0.462745
+    );
+    --_colors---gradient--peach-stop-2: color(
+      display-p3 0.94902 0.772549 0.486275
+    );
+    --_colors---gradient--peach-stop-3: color(
+      display-p3 0.780392 0.835294 0.623529
+    );
+  }
+}
 
 /* ============================================================
    02. BASE
    ============================================================ */
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
+  text-size-adjust: 100%;
+  text-decoration-skip-ink: auto;
+  text-decoration-thickness: 8%;
+  text-underline-offset: -8%;
+  text-underline-position: from-font;
+}
+
+html {
+  scroll-behavior: initial;
+  scrollbar-width: none; /* Firefox */
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  width: 100vw;
+
+  /* IMPORTANT: one declaration only (second line was overriding the first) */
+  font-feature-settings: "liga" 1, "calt" 1;
+
+  -ms-overflow-style: none; /* IE & Edge */
+}
+
+/* Hide scrollbars universally */
+body::-webkit-scrollbar,
+body ::-webkit-scrollbar {
+  display: none;
+}
+
+svg {
+  max-width: none;
+  height: auto;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+a {
+  color: inherit;
+}
+
 /* ============================================================
    03. WEBFLOW NEUTRALIZERS
    ============================================================ */
 
+/* Existing Webflow rich-text/container overrides are preserved below with their source utilities. */
+
 /* ============================================================
    04. DOCUMENT STATE
-   Runtime classes on <html>. The boot handshake: the head snippet in
-   loader.html adds .is-loading before first paint and src/index.ts
-   drops it once the bundle boots, with a 3s timeout in the snippet as
-   the safety net. Grouped here so the whole handshake reads in one
-   place — if you add a smooth-scroll library, its <html> class belongs
-   beside these, not at the end of the file.
    ============================================================ */
 
 html.is-loading,
-html.is-loading body {
-  overflow: hidden;
-  height: 100%;
-}
+html.is-loading body { overflow: hidden; height: 100%; }
+
+/* Existing Lenis footer styles. */
+html.lenis { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
 
 /* ============================================================
    05. COMPONENTS & MOTION
    ============================================================ */
 
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  top: var(--underline-top);
+  left: 0%;
+  height: var(--underline-height);
+  width: 0%;
+  background: currentColor;
+  transition: width var(--dur-bbs) var(--ease-bbs);
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+.link-underline:not(:hover)::after {
+  left: auto;
+  right: 0%;
+  width: 0%;
+}
+
+.inline-link-underline {
+  position: relative;
+  --underline-top: 96%;
+  --inline-underline-opacity: 0.24;
+}
+.inline-link-underline::after {
+  content: "";
+  position: absolute;
+  top: var(--underline-top);
+  left: 0%;
+  height: var(--underline-height);
+  width: 100%;
+  background: currentColor;
+  opacity: var(--inline-underline-opacity);
+  transition: opacity var(--dur-bbs) var(--ease-bbs);
+}
+.inline-link-underline:hover::after {
+  opacity: 1;
+}
+
+/* ------------------------------------------------
+            07. Animations
+            ------------------------------------------------ */
+@keyframes loopX {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes loopY {
+  from {
+    transform: translateY(0%);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+.loop-animate-x {
+  animation: loopX var(--loop-x-duration) linear infinite;
+  will-change: transform;
+}
+.loop-animate-y {
+  animation: loopY var(--loop-y-duration) linear infinite;
+  will-change: transform;
+}
+.loop-animate-x.reverse {
+  animation: loopX var(--loop-x-duration) linear infinite reverse;
+  will-change: transform;
+}
+.loop-animate-y.reverse {
+  animation: loopY var(--loop-y-duration) linear infinite reverse;
+  will-change: transform;
+}
+
+.svg-animate-line {
+  stroke-dasharray: 10 10 !important;
+  animation: svgDash var(--svg-dash-duration) linear infinite;
+}
+.svg-animate-line.reverse {
+  animation: svgDash var(--svg-dash-duration) linear infinite reverse;
+}
+
+@keyframes svgDash {
+  to {
+    stroke-dashoffset: var(--svg-dash-offset);
+  }
+}
+
+.image-w img {
+  transition: transform var(--dur-bbs) var(--ease-bbs);
+}
+.image-w:hover img {
+  transform: scale(var(--image-zoom-scale));
+}
+
+.s-wrapper::before,
+.s-wrapper::after {
+  display: none;
+}
+
+.filter-radio-button.w--redirected-checked ~ .label-filter-menu {
+}
+
+.s-g-nav.is-shrunk {
+  --padding-v: 1.5em;
+  padding-top: var(--padding-v);
+  padding-bottom: var(--padding-v);
+  background: black;
+}
+
+/* Reformd waitlist modal. Form content is the shared Webflow component. */
+#waitlist-modal {
+  box-sizing: border-box;
+  width: min(560px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .3);
+  background: #080808;
+  color: #fff;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+#waitlist-modal:not([open]) { display: none; }
+#waitlist-modal::backdrop {
+  background: rgba(0, 0, 0, .78);
+  backdrop-filter: blur(4px);
+}
+#waitlist-modal-panel { position: relative; padding: 64px 40px 40px; }
+#waitlist-modal [data-waitlist-close] {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  font: 300 32px/1 Arial, sans-serif;
+  cursor: pointer;
+}
+#waitlist-modal [data-waitlist-close]:hover { border-color: rgba(255,255,255,.4); }
+#waitlist-modal .notified-form-block,
+#waitlist-modal .notified-form { width: 100%; max-width: none; margin: 0; }
+#waitlist-modal h2 { font-size: 26px; line-height: 1.2; padding-right: 12px; }
+#waitlist-modal .notified-form-headings p { font-size: 14px; line-height: 1.5; }
+#waitlist-modal .notified-form-input { min-height: 48px; font-size: 16px; line-height: 1.5; }
+#waitlist-modal .label-button { font-size: 14px; line-height: 1.3; }
+#waitlist-modal .button-w { min-height: 44px; }
+#waitlist-modal .w-form-done,
+#waitlist-modal .w-form-fail { font-size: 16px; line-height: 1.5; }
+@media screen and (max-width: 479px) {
+  #waitlist-modal-panel { padding: 64px 24px 28px; }
+  #waitlist-modal h2 { font-size: 24px; }
+}
+
 /* ============================================================
    06. UTILITIES
    ============================================================ */
 
+/* Same behavior, lower specificity so Webflow overrides stay easy */
+.rte :where(:first-child, div:first-child > :first-child),
+.content-rte :where(:first-child, div:first-child > :first-child),
+.case-study :where(:first-child, div:first-child > :first-child) {
+  margin-top: 0 !important;
+}
+.rte :where(:last-child, div:first-child > :last-child),
+.content-rte :where(:last-child, div:first-child > :last-child),
+.case-study :where(:last-child, div:first-child > :last-child) {
+  margin-bottom: 0 !important;
+}
+
+.w-richtext::after,
+.w-richtext::before {
+  display: none;
+}
+
+/* ------------------------------------------------
+            05. Utility Attributes
+            ------------------------------------------------ */
+[scroll-show="false"] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+[scroll-show="false"]::-webkit-scrollbar {
+  display: none;
+}
+
+/* Truncate Text Utility (single core rule + variable override) */
+[data-truncate] {
+  --truncate-lines: 1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+  -webkit-line-clamp: var(--truncate-lines);
+}
+
+[data-truncate="1"] {
+  --truncate-lines: 1;
+}
+[data-truncate="2"] {
+  --truncate-lines: 2;
+}
+
+/* Selection Highlight */
+@supports (background-color: color-mix(in srgb, black 10%, transparent)) {
+  ::selection {
+    background-color: color-mix(in srgb, currentColor 12%, transparent);
+    color: var(--color-accent);
+    text-shadow: none;
+  }
+  ::-moz-selection {
+    background-color: color-mix(in srgb, currentColor 12%, transparent);
+    color: var(--color-accent);
+    text-shadow: none;
+  }
+}
+
+[data-theme="dark"] {
+  background-color: var(--_colors---bg--dark);
+  color: var(--_colors---text--light);
+}
+[data-theme="dark-transparent"] {
+  color: var(--_colors---text--light) !important;
+  background-color: transparent;
+}
+
+[data-gradient] {
+  background: linear-gradient(
+    90deg,
+    #db4ed7 0%,
+    #b370dc 46.32%,
+    #61b4e7 82.69%
+  );
+}
+
+[data-gradient-text] {
+  -webkit-background-clip: text;
+  background-clip: text;
+  background-repeat: repeat-x;
+  -webkit-text-fill-color: transparent;
+  color: inherit;
+}
+
+
+.swiper-wrapper { flex-direction: row; flex-wrap: nowrap !important; }
+
 /* ============================================================
    07. ACCESSIBILITY
-   Focus rings, and the reduced-motion trumps that have to sit after
-   every transition they cancel.
    ============================================================ */
 
+/* Motion respect */
 @media (prefers-reduced-motion: reduce) {
-  /* Cancel motion here, not at the rule that defines it. */
+  .loop-animate-x,
+  .loop-animate-y,
+  .svg-animate-line {
+    animation: none !important;
+  }
+
+  .image-w img,
+  .link-underline::after,
+  .inline-link-underline::after {
+    transition-duration: 1ms !important;
+  }
 }
+
+
+#waitlist-modal :focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 
 /* ============================================================
    08. EDITOR & DEV SUPPORTS
-   Canvas-only escape hatches. Probe with `background`, never
-   `outline` — an outline on body paints outside the border box,
-   lands outside the canvas iframe and gets clipped, which reads as
-   "the CSS isn't loading" when it is.
    ============================================================ */
+
+/* Hiding Dev Supports — preserved from the existing global head. */
+.g-embed-code,
+/* .g-grid-guide, */
+.w-webflow-badge,
+.cms-filter {
+  z-index: -99999 !important;
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}

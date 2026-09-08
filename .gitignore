@@ -9,3 +9,6 @@ node_modules/
 # `git rm -r --cached dist` — this rule does nothing while it stays tracked.
 # See the Release section of the README.
 dist
+
+# Local Webflow snapshots and the superseded inline modal source.
+webflow/waitlist-modal/
