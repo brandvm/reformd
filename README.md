@@ -1,145 +1,101 @@
-# Brand Vision — Webflow custom code template
+# Reformd — Webflow custom code
 
-TypeScript + esbuild toolchain for Webflow client sites — JS **and** CSS.
-Dev = localhost live reload · Staging = auto-deploy on push · Prod = pinned jsDelivr tag.
+Custom JavaScript and CSS for [Reformd staging](https://reformd.webflow.io/).
+Webflow owns page markup, classes, and the shared waitlist form component.
+This repository owns the behavior and custom styles formerly served by CodeSandbox.
 
-Source files: `src/index.ts` (bundled to `dist/index.js`) and `src/styles.css`
-(minified to `dist/styles.css`). Both ship together under one version tag.
+## Where the supplied code lives
 
-The Webflow Designer owns layout and classes. Nothing in this repo generates
-markup.
+| Previous location | Repository source |
+| --- | --- |
+| Global head: viewport, theme color, reserved Finsweet/font entries | Head section of `loader.html` |
+| Global head: developer visibility, Swiper, and Lenis CSS | `src/styles.css` |
+| Global footer: Lenis 1.1.5 and GSAP integration | `src/modules/smooth-scroll.ts` |
+| `reformd-main.js`: navigation shrinking at 5vh | `src/modules/nav-shrink.ts` |
+| Module boot, isolated error handling, ready messages | `src/index.ts`, `src/utils.ts` |
+| Home page modal code and styles | `src/modules/waitlist-modal.ts`, `src/styles.css` |
+| Existing `reformd-main.css` design system and utilities | `src/styles.css` |
 
-## Requirements
+The existing build convention is retained: `src/index.ts` builds to `dist/index.js`,
+and `src/styles.css` builds to `dist/styles.css`. Lenis is bundled at the same
+version as the supplied snippet; it no longer needs a separate CDN script.
+Supported Lenis option names replace the old aliases. GSAP/ScrollTrigger are
+used when Webflow provides them; otherwise Lenis runs with `requestAnimationFrame`.
 
-- [Node](https://nodejs.org) 22 (the version CI builds with)
-- [pnpm](https://pnpm.io/installation) 11 — `corepack enable`
+## Development
 
-```bash
+Node 22+ and pnpm 11 are required.
+
+```sh
 pnpm install
-```
-
-## Commands
-
-```bash
-pnpm dev      # esbuild watch + server on :3000 (unminified, sourcemaps)
-pnpm build    # minified -> dist/
-pnpm check    # tsc --noEmit
-```
-
-## New project checklist
-
-1. Use this template → create repo `wf-<client>` (public)
-2. `package.json` → change `"name"`
-3. Repo Settings → Pages → Source: **GitHub Actions**
-4. Repo → Settings → Collaborators and teams → add the `developers` team (Write)
-5. Paste the three snippets from `loader.html` into Webflow, replacing `REPO`
-   with this repo's name in each — head code, an **Embed on the canvas**, and
-   footer code. Piece 2 must be an Embed inside a component that appears on
-   every page; site custom code does not render in the Designer.
-6. Publish to staging and confirm the canvas picks up `styles.css`
-
-## Daily
-
-- `pnpm dev`, then on the `.webflow.io` site append `?bv-dev=1` to the URL →
-  your browser loads localhost with live reload. `?bv-dev=0` to exit.
-- `git push` → client-facing staging bundle updates in ~1 min (no Webflow publish)
-- Live reload works in the browser. It does **not** work on the Designer canvas,
-  which never runs scripts — reload the Designer tab instead.
-
-## Release (launch / retainer updates)
-
-```
+pnpm check
 pnpm build
-git add -f dist && git commit -m "release: vX.Y.Z"
-git tag vX.Y.Z && git push && git push --tags
-git rm -r --cached dist && git commit -m "chore: untrack dist after vX.Y.Z"
-git push
+pnpm dev
 ```
 
-`dist/` is gitignored for day-to-day work, so the `-f` is required — without
-it the release commit is empty, the tag carries no build, and jsDelivr serves
-a 404 to the live site.
+`pnpm dev` serves on port 3000 with live reload. On the Webflow staging domain,
+`?bv-dev=1` selects localhost and `?bv-dev=0` restores the staging bundle.
+The local flag is ignored on custom domains. Designer CSS updates require
+refreshing the canvas; Designer does not run the loader JavaScript.
 
-The un-track at the end is not optional tidying. `.gitignore` only governs
-files git is not already *tracking*, so the release commit permanently
-cancels the ignore rule for `dist/`: from that point on every rebuild shows
-as a modification and `git add .` sweeps a minified bundle into whatever
-commit you are writing. `--cached` un-tracks it but leaves the files on
-disk, so the ignore rule applies again. The tag is untouched — it still
-points at the commit that contains the build, and jsDelivr serves that
-forever.
+## Webflow installation
 
-Then bump `VER` in BOTH Webflow snippets (the CSS/config Embed and the footer
-loader) → publish staging → verify → publish prod.
-Rollback = revert the version strings. Never use `@latest` or branch URLs in prod.
+`loader.html` contains three separate snippets:
 
-**Tag rules (learned the hard way):**
+1. **Site settings → Head code:** viewport/theme metadata, preconnects, and
+   a three-second scroll-lock safety timeout.
+2. **G | Embed Code component:** CSS links and shared loader configuration.
+   This replaces the existing CodeSandbox stylesheet link and keeps custom
+   styles visible in the Designer canvas.
+3. **Site settings → Footer code:** JavaScript loader. This replaces both
+   the old inline Lenis initialization and the CodeSandbox script tag.
 
-- `dist/` must be committed *before* the tag is pushed
-- A pushed tag must **never** be moved (`tag -f`) — jsDelivr snapshots a
-  version once and keeps it forever, so a half-baked snapshot is permanent.
-  Botched release? Cut the next patch version instead
-- Un-track `dist/` again once the tag is pushed, or the ignore rule stays
-  dead for every commit after the first release
+Clear the previous Home page modal head/footer custom code when installing the
+bundle so the same feature is not maintained in two places. Keep the Webflow
+modal elements and both instances of **C | Notified Form Block**.
 
-**Before attaching a custom domain,** confirm the repo actually has the tag
-`VER` points at. A site running on `.webflow.io` never touches the prod URLs,
-so a placeholder `VER = "X.Y.Z"` stays invisible until the moment the domain
-goes live — and then both CSS and JS 404 at once.
+## Hosting and releases
 
-## How the files reach the page
+| Environment | Assets |
+| --- | --- |
+| Webflow staging | `https://brandvm.github.io/reformd/` |
+| Custom domains | `https://cdn.jsdelivr.net/gh/brandvm/reformd@v1.0.0/dist/` |
+| Local development | `http://localhost:3000/` |
 
-Three snippets, documented in [`loader.html`](loader.html) — read that file
-before touching any of them.
+GitHub Pages uses GitHub Actions. A push to `master` runs type checking and
+builds/publishes the staging assets. Pull requests run the same checks without
+publishing. Custom domains use the immutable tag set in both `VER` strings
+in `loader.html`; staging updates do not change that pinned code.
 
-| Environment    | Source                  |
-| -------------- | ----------------------- |
-| Production     | pinned jsDelivr tag     |
-| `*.webflow.io` | GitHub Pages staging    |
-| `?bv-dev=1`    | `http://localhost:3000` |
+For the next release, use a new version in place of `vX.Y.Z`:
 
-Dev mode is localhost-only by design: `http://localhost` is a
-potentially-trustworthy origin so an https page may load it, but a LAN IP is
-not and gets blocked as mixed content. To check work on another device, push
-and use the staging bundle.
-
-Pushing to `master` triggers
-[`.github/workflows/staging.yml`](.github/workflows/staging.yml), which runs
-`pnpm build` and publishes `dist/` to GitHub Pages. Production is pinned to a
-tag, so a staging deploy never touches the live site.
-
-## Project structure
-
-```
-src/
-  index.ts            entry point; a manifest of module imports and calls
-  styles.css          the whole stylesheet, in numbered sections
-  modules/            one file per feature, each exporting an init function
-build.mjs             esbuild config and dev server
-loader.html           the three Webflow snippets, documented
+```sh
+pnpm check && pnpm build
+git add -f dist/index.js dist/styles.css
+git commit -m "release: vX.Y.Z"
+git tag vX.Y.Z
+git push origin HEAD
+git push origin vX.Y.Z
+git rm --cached dist/index.js dist/styles.css
+git commit -m "chore: untrack release output"
+git push origin HEAD
 ```
 
-`src/styles.css` opens with cascade notes and a numbered table of contents.
-Section order is the tiebreaker for same-specificity rules — add to the
-section a rule belongs to, never to the end of the file.
+Include only those two build files in the release. Never move a published tag.
+Verify both CDN files, then update both `VER` strings in the Webflow snippets
+and publish staging before publishing the custom domains. Roll back by setting
+both strings to the previous existing tag and republishing.
 
-TypeScript runs `strict`, targets ES2019, and defines no path aliases —
-imports are relative.
+## Waitlist modal
 
-## Webflow MCP
+The native `<dialog id="waitlist-modal">` contains a second instance of the
+footer form component. The hero trigger has `data-waitlist-open`; the close
+button has `data-waitlist-close`. Component edits update both forms.
 
-`.mcp.json` carries the Webflow MCP server definition. Approve the project
-server on first launch, then run `/mcp` to authorise Webflow — OAuth is
-per-machine, so this is repeated on each new machine.
+The module prefixes modal field IDs, labels inputs, contains keyboard focus,
+restores trigger focus after closing, and pauses/resumes the shared Lenis
+controller. Escape, the close button, and backdrop clicks dismiss the dialog.
 
-## Auditing before launch
-
-Before shipping, check every JS module and CSS block against the live markup —
-modules whose selectors/attributes appear on no page are dead weight
-(the TeraWulf migration dropped 5 of 7 inherited modules this way).
-
-## Handoff (site leaving the agency)
-
-Build → paste `dist/index.js` inline into Site footer, CSS inline into the
-canvas Embed → remove loader + external tags → publish → zip `src/` for the
-client → archive repo.
+Verified against the staging page's markup at desktop and mobile sizes:
+nav shrinking, modal opening/closing, focus/scroll restoration, and operation
+without GSAP. No real form submission was made, so delivery is not covered.
