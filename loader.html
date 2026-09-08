@@ -75,27 +75,17 @@ to it must also be copied into Webflow and published.
    designing. An icon font belongs here for the same reason: in head
    code the canvas would show blank boxes where every icon should be.
 
-   Two site-CSS links, because the canvas can't choose one for itself:
-     bv-css     staging — what the canvas falls back to
-     bv-css-dev the local dev server, second so it wins the cascade
-   In the canvas both are live: run `pnpm dev` and you are styling
-   against your unsaved local edits; with the server down that link
-   just fails and staging shows through. Everywhere else the script
-   below rewrites bv-css (pinned tag on prod, cache-busted staging on
-   webflow.io) and deletes bv-css-dev unless the dev flag is on.
+   The canvas loads the staging stylesheet. Local CSS is added by the script
+   only when ?bv-dev=1 is selected on the staging domain. Do not put an
+   unconditional localhost stylesheet before an inline script: the browser
+   can wait for that stylesheet before executing the code that removes it.
 
-   Because both are live in the canvas they are also ADDITIVE there:
-   deleting a rule locally does not delete staging's copy of it, so
-   there is nothing left to override and staging's rule stands.
-   Deletions cannot be verified on localhost — push, or comment out
-   the bv-css link while you check.
+   To preview local CSS in the Designer, temporarily point bv-css at
+   http://localhost:3000/styles.css while pnpm dev is running, then restore
+   the staging URL before publishing. The canvas does not execute scripts.
 
-   Refreshing the canvas: it re-renders when you close the Embed
-   editor, and reloads with the Designer tab — the canvas has no
-   live-reload of its own, so a local CSS edit needs one of those.
-   esbuild sends no Cache-Control at all; if a reload still looks
-   stale, bump the ?v= on either href. GitHub Pages caches ~10 min,
-   so bumping ?v=1 below is also how you pull fresh STAGING css in.
+   Refresh the canvas after CSS changes. Bump ?v= in the staging href when
+   a cached stylesheet persists.
 
    Placement bonus: an Embed in the body loads after Webflow's own
    stylesheet, so our rules win ties on specificity.
@@ -104,11 +94,6 @@ to it must also be copied into Webflow and published.
   id="bv-css"
   rel="stylesheet"
   href="https://brandvm.github.io/reformd/styles.css?v=1"
-/>
-<link
-  id="bv-css-dev"
-  rel="stylesheet"
-  href="http://localhost:3000/styles.css"
 />
 <script>
   (function () {
@@ -126,14 +111,17 @@ to it must also be copied into Webflow and published.
     } catch (e) {}
     // Shared config — the footer loader (and the bundle) read this.
     window.BV = { staging: staging, dev: flag, devBase: DEV, stag: STAG };
-    // Runs in the same tick as the links above, so neither the staging
-    // nor the localhost sheet ever applies on prod — the final URLs are selected
-    // during parsing. A speculative request can still occur for the initial href.
     var base = document.getElementById("bv-css");
-    var dev = document.getElementById("bv-css-dev");
     if (base)
       base.href = staging ? STAG + "styles.css?v=" + Date.now() : PROD_CSS;
-    if (dev && !flag) dev.parentNode.removeChild(dev);
+    // Create the local stylesheet only after explicit staging dev selection.
+    if (flag) {
+      var dev = document.createElement("link");
+      dev.id = "bv-css-dev";
+      dev.rel = "stylesheet";
+      dev.href = DEV + "styles.css";
+      document.head.appendChild(dev);
+    }
   })();
 </script>
 

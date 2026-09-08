@@ -35,8 +35,9 @@ pnpm dev
 
 `pnpm dev` serves on port 3000 with live reload. On the Webflow staging domain,
 `?bv-dev=1` selects localhost and `?bv-dev=0` restores the staging bundle.
-The local flag is ignored on custom domains. Designer CSS updates require
-refreshing the canvas; Designer does not run the loader JavaScript.
+The local flag is ignored on custom domains. Local CSS is requested only
+when dev mode is selected. The Designer uses staging CSS by default; see
+`loader.html` for an explicit temporary localhost override while designing.
 
 ## Webflow installation
 
@@ -52,7 +53,7 @@ refreshing the canvas; Designer does not run the loader JavaScript.
 
 Clear the previous Home page modal head/footer custom code when installing the
 bundle so the same feature is not maintained in two places. Keep the Webflow
-modal elements and both instances of **C | Notified Form Block**.
+modal elements and the shared **C | Notified Form Block** component.
 
 ## Hosting and releases
 
@@ -88,9 +89,9 @@ both strings to the previous existing tag and republishing.
 
 ## Waitlist modal
 
-The native `<dialog id="waitlist-modal">` contains a second instance of the
-footer form component. The hero trigger has `data-waitlist-open`; the close
-button has `data-waitlist-close`. Component edits update both forms.
+The native `<dialog id="waitlist-modal">` contains an instance of the
+existing shared form component. The hero trigger has `data-waitlist-open`; the close
+button has `data-waitlist-close`. Component edits apply to the modal and any other instances, including a footer form if present.
 
 The module prefixes modal field IDs, labels inputs, contains keyboard focus,
 restores trigger focus after closing, and pauses/resumes the shared Lenis
